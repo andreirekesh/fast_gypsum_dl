@@ -119,10 +119,11 @@ def enumerate_double_bonds(
 
     # Keep only the top few compound variants in each container, to prevent a
     # combinatorial explosion.
-    ChemUtils.bst_for_each_contnr_no_opt(
-        contnrs, flat, max_variants_per_compound, thoroughness
+    contnrs = ChemUtils.bst_for_each_contnr_no_opt(
+        contnrs, flat, max_variants_per_compound, thoroughness, num_procs, job_manager, parallelizer_obj
     )
 
+    return contnrs
 
 def parallel_get_double_bonded(mol, max_variants_per_compound, thoroughness):
     """A parallelizable function for enumerating double bonds.

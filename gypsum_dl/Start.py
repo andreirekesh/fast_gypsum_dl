@@ -314,7 +314,7 @@ def execute_gypsum_dl(contnrs, params):
 
     # Prepare the smiles. Desalt, consider alternate ionization, tautometeric,
     # stereoisomeric forms, etc.
-    prepare_smiles(contnrs, params)
+    contnrs = prepare_smiles(contnrs, params)
 
     # Convert the processed SMILES strings to 3D.
     prepare_3d(contnrs, params)

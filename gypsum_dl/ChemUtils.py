@@ -115,6 +115,9 @@ def bst_for_each_contnr_no_opt(
     mol_lst,
     max_variants_per_compound,
     thoroughness,
+    num_procs,
+    job_manager,
+    parallelizer_obj,
     crry_ovr_frm_lst_step_if_no_fnd=True,
 ):
     """Keep only the top few compound variants in each container, to prevent a
@@ -150,59 +153,81 @@ def bst_for_each_contnr_no_opt(
     # Group the smiles by contnr_idx.
     data = Utils.group_mols_by_container_index(mol_lst)
 
+    inputs = [
+        (contnr, data, max_variants_per_compound, thoroughness, crry_ovr_frm_lst_step_if_no_fnd) 
+        for contnr in contnrs
+    ]
+
     # Go through each container.
-    for contnr_idx, contnr in enumerate(contnrs):
-        contnr_idx = contnr.contnr_idx
-        none_generated = False
+    results = []
+    if parallelizer_obj is None:
+        results.extend(parallel_bst_for_each_contnr_no_opt(*i) for i in inputs)
+    else:
+        results.extend(parallelizer_obj.run(inputs, parallel_bst_for_each_contnr_no_opt, num_procs, job_manager))
 
-        # Pick just the lowest-energy conformers from the new candidates.
-        # Possible a compound was eliminated early on, so doesn't exist.
-        if contnr_idx in list(data.keys()):
-            mols = data[contnr_idx]
+    return results
+    
 
-            # Remove molecules with unusually high charges.
-            mols = remove_highly_charged_molecules(mols)
+def parallel_bst_for_each_contnr_no_opt(
+    contnr, 
+    data, 
+    max_variants_per_compound,
+    thoroughness,
+    crry_ovr_frm_lst_step_if_no_fnd
+):
+    contnr_idx = contnr.contnr_idx
+    none_generated = False
 
-            # Pick the lowest-energy molecules. Note that this creates a
-            # conformation if necessary, but it is not minimized and so is not
-            # computationally expensive.
-            mols = pick_lowest_enrgy_mols(mols, max_variants_per_compound, thoroughness)
+    # Pick just the lowest-energy conformers from the new candidates.
+    # Possible a compound was eliminated early on, so doesn't exist.
+    if contnr_idx in list(data.keys()):
+        mols = data[contnr_idx]
 
-            if len(mols) > 0:
-                # Now remove all previously determined mols for this
-                # container.
-                contnr.mols = []
+        # Remove molecules with unusually high charges.
+        mols = remove_highly_charged_molecules(mols)
 
-                # Add in the lowest-energy conformers back to the container.
-                for mol in mols:
-                    contnr.add_mol(mol)
-            else:
-                none_generated = True
+        # Pick the lowest-energy molecules. Note that this creates a
+        # conformation if necessary, but it is not minimized and so is not
+        # computationally expensive.
+        mols = pick_lowest_enrgy_mols(mols, max_variants_per_compound, thoroughness)
+        if len(mols) > 0:
+            # Now remove all previously determined mols for this
+            # container.
+            contnr.mols = []
+
+            # Add in the lowest-energy conformers back to the container.
+            for mol in mols:
+                contnr.add_mol(mol)
         else:
             none_generated = True
+    else:
+        none_generated = True
 
-        # No low-energy conformers were generated.
-        if none_generated:
-            if crry_ovr_frm_lst_step_if_no_fnd:
-                # Just use previous ones.
-                Utils.log(
-                    "\tWARNING: Unable to find low-energy conformations: "
-                    + contnr.orig_smi_deslt
-                    + " ("
-                    + contnr.name
-                    + "). Keeping original "
-                    + "conformers."
-                )
-            else:
-                # Discard the conformation.
-                Utils.log(
-                    "\tWARNING: Unable to find low-energy conformations: "
-                    + contnr.orig_smi_deslt
-                    + " ("
-                    + contnr.name
-                    + "). Discarding conformer."
-                )
-                contnr.mols = []
+    # No low-energy conformers were generated.
+    if none_generated:
+        if crry_ovr_frm_lst_step_if_no_fnd:
+            # Just use previous ones.
+            Utils.log(
+                "\tWARNING: Unable to find low-energy conformations: "
+                + contnr.orig_smi_deslt
+                + " ("
+                + contnr.name
+                + "). Keeping original "
+                + "conformers."
+            )
+        else:
+            # Discard the conformation.
+            Utils.log(
+                "\tWARNING: Unable to find low-energy conformations: "
+                + contnr.orig_smi_deslt
+                + " ("
+                + contnr.name
+                + "). Discarding conformer."
+            )
+            contnr.mols = []
+
+    #print(contnr.all_can_noh_smiles())
+    return contnr
 
 
 def uniq_mols_in_list(mol_lst):
