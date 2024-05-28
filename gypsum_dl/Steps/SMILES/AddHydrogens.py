@@ -127,10 +127,11 @@ def add_hydrogens(
 
     # Keep only the top few compound variants in each container, to prevent a
     # combinatorial explosion.
-    ChemUtils.bst_for_each_contnr_no_opt(
-        contnrs, results, max_variants_per_compound, thoroughness
+    contnrs = ChemUtils.bst_for_each_contnr_no_opt(
+        contnrs, results, max_variants_per_compound, thoroughness, num_procs, job_manager, parallelizer_obj
     )
 
+    return contnrs
 
 def parallel_add_H(contnr, protonation_settings):
     """Creates alternate ionization variants for a given molecule container.

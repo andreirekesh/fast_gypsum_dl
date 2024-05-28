@@ -73,7 +73,7 @@ def prepare_smiles(contnrs, params):
     # Add hydrogens for user-specified pH, if requested.
     if not params["skip_adding_hydrogen"]:
         # Utils.log("Ionizing Molecules")
-        add_hydrogens(
+        contnrs = add_hydrogens(
             contnrs,
             min_ph,
             max_ph,
@@ -95,7 +95,7 @@ def prepare_smiles(contnrs, params):
     # Make alternate tautomeric forms, if requested.
     if not params["skip_making_tautomers"]:
         # Utils.log("Tautomerizing Molecules")
-        make_tauts(
+        contnrs = make_tauts(
             contnrs,
             max_variants_per_compound,
             thoroughness,
@@ -125,7 +125,7 @@ def prepare_smiles(contnrs, params):
     # Make alternate chiral forms, if requested.
     if not params["skip_enumerate_chiral_mol"]:
         # Utils.log("Enumerating Chirality")
-        enumerate_chiral_molecules(
+        contnrs = enumerate_chiral_molecules(
             contnrs,
             max_variants_per_compound,
             thoroughness,
@@ -143,7 +143,7 @@ def prepare_smiles(contnrs, params):
     # Make alternate double-bond isomers, if requested.
     if not params["skip_enumerate_double_bonds"]:
         # Utils.log("Enumerating Double Bonds")
-        enumerate_double_bonds(
+        contnrs = enumerate_double_bonds(
             contnrs,
             max_variants_per_compound,
             thoroughness,
@@ -158,6 +158,7 @@ def prepare_smiles(contnrs, params):
     if debug:
         Utils.print_current_smiles(contnrs)
 
+    return contnrs
 
 def wrap_molecules(contnrs):
     """Each molecule container holds only one SMILES string

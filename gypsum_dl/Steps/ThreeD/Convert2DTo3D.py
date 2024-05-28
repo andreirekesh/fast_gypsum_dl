@@ -83,9 +83,11 @@ def convert_2d_to_3d(
 
     # Keep only the top few compound variants in each container, to prevent a
     # combinatorial explosion.
-    ChemUtils.bst_for_each_contnr_no_opt(
-        contnrs, clear, max_variants_per_compound, thoroughness, False
+    contnrs = ChemUtils.bst_for_each_contnr_no_opt(
+        contnrs, clear, max_variants_per_compound, thoroughness, num_procs, job_manager, parallelizer_obj, False
     )
+
+    return contnrs
 
 
 def parallel_make_3d(mol):
